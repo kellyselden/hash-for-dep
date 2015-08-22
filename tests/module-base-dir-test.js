@@ -1,38 +1,46 @@
 'use strict';
 var path = require('path');
 var assert = require('assert');
-var getModuleBaseDir = require('../lib/module-base-dir');
+var moduleBaseDir = require('../lib/module-base-dir');
 
 describe('moduleBaseDir', function() {
   it('Locates the true root directory for a module', function() {
     var fixturesPath = path.join(__dirname, 'fixtures');
-    var moduleName = 'foo';
-    var moduleBaseDir = path.join(fixturesPath, 'node_modules', moduleName);
+    var foo = 'foo';
+    var fooModulePath = path.join(fixturesPath, 'node_modules', foo);
 
-    assert.equal(getModuleBaseDir(moduleBaseDir, moduleName), moduleBaseDir);
-    assert.equal(getModuleBaseDir(moduleBaseDir + '/asdf.js', moduleName), moduleBaseDir);
-    assert.equal(getModuleBaseDir(moduleBaseDir + '/index.js', moduleName), moduleBaseDir);
-    assert.equal(getModuleBaseDir(moduleBaseDir + '/lib/index.js', moduleName), moduleBaseDir);
+    assert.equal(moduleBaseDir(fooModulePath, foo), fooModulePath);
+    assert.equal(moduleBaseDir(fooModulePath + '/asdf.js', foo), fooModulePath);
+    assert.equal(moduleBaseDir(fooModulePath + '/index.js', foo), fooModulePath);
+    assert.equal(moduleBaseDir(fooModulePath + '/lib/index.js', foo), fooModulePath);
   });
 
   it('Handles going up a folder', function() {
-    var moduleBaseDir = path.join('broccoli-persistent-filter', 'node_modules', 'hash-for-dep');
-    var modulePath = path.join(moduleBaseDir, 'index.js');
-    var moduleName = '..';
+    var modulePath = path.normalize('broccoli-persistent-filter/node_modules/hash-for-dep/index.js');
+    var moduleName = path.normalize('../');
 
-    var expected = moduleBaseDir;
-    var actual = getModuleBaseDir(modulePath, moduleName);
+    var expected = path.normalize('broccoli-persistent-filter/node_modules/hash-for-dep/');
+    var actual = moduleBaseDir(modulePath, moduleName);
 
     assert.equal(actual, expected);
   });
 
-  it('Handles separator after module name', function() {
-    var moduleBaseDir = path.join('broccoli-persistent-filter', 'node_modules', 'broccoli-kitchen-sink-helpers', 'node_modules', 'glob');
-    var modulePath = path.join(moduleBaseDir, 'glob.js');
-    var moduleName = 'glob' + path.sep;
+  it('Handles Linux separators', function() {
+    var modulePath = 'broccoli-persistent-filter/node_modules/broccoli-kitchen-sink-helpers/node_modules/glob/glob.js';
+    var moduleName = 'glob/';
 
-    var expected = moduleBaseDir + path.sep;
-    var actual = getModuleBaseDir(modulePath, moduleName);
+    var expected = path.normalize('broccoli-persistent-filter/node_modules/broccoli-kitchen-sink-helpers/node_modules/glob/');
+    var actual = moduleBaseDir(modulePath, moduleName);
+
+    assert.equal(actual, expected);
+  });
+
+  it('Handles Windows separators', function() {
+    var modulePath = 'broccoli-persistent-filter\\node_modules\\broccoli-kitchen-sink-helpers\\node_modules\\glob\\glob.js';
+    var moduleName = 'glob\\';
+
+    var expected = path.normalize('broccoli-persistent-filter/node_modules/broccoli-kitchen-sink-helpers/node_modules/glob/');
+    var actual = moduleBaseDir(modulePath, moduleName);
 
     assert.equal(actual, expected);
   });
